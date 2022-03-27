@@ -43,7 +43,7 @@ class AffineFunction:
 
 
 class PiecewiseAffineFunction:
-    def __init__(self, affine_pieces: AffineFunction):
+    def __init__(self, affine_pieces: List[AffineFunction]):
         # TODO: check regularity
         # TODO: check convexity
         # TODO: проверить, что значения в вершинах многогранников одинаковые на смежных
@@ -65,6 +65,10 @@ class PiecewiseAffineFunction:
             self.affine_pieces[j].coefs = res
             vertices = []
             for vert in self.affine_pieces[j].domain.vertices():
-                vertices.append(phi(vert._vector))
+                vertices.append(phi(vert.vector()))
             self.affine_pieces[j].domain = Polyhedron(vertices=vertices)
+
+    def __str__(self):
+        resp = '\n'.join([str(piece) for piece in self.affine_pieces])
+        return 'Piecewise affine function:\n' + resp
 
