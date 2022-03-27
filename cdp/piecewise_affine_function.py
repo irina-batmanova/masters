@@ -4,7 +4,7 @@ from sage.all import *
 
 
 class AffineFunction:
-    def __init__(self, coefficients: List[int], domain: Polyhedron):
+    def __init__(self, coefficients: List[float], domain: Polyhedron):
         dim = len(domain.vertices()[0].vector())
         if len(coefficients) != dim + 1:
             raise ValueError(f'Domain dimension {len(coefficients) - 1} '
