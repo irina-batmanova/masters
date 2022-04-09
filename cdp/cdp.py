@@ -42,6 +42,10 @@ class CDP:
         # TODO: is there a better solution for vertices traversal?
         self.base_adjacency_map = defaultdict(set)
 
+    def __str__(self):
+        psi_str = "\n".join([str(psi) for psi in self.psi_list])
+        return f'CDP object, psi list: {psi_str},\nbase: {self.base.vertices()}'
+
     def _build_adjacency_map(self):
         for i in range(self.k):
             for j in range(i + 1, self.k):
@@ -54,8 +58,10 @@ class CDP:
         for vert in self.base.vertices():
             vertices.append(phi(vert.vector()))
         self.base = Polyhedron(vertices=vertices)
-        # TODO: inverse may not exist
-        inv = phi.inverse().matrix()
+        try:
+            inv = phi.inverse().matrix()
+        except ZeroDivisionError:
+            raise ValueError(f'phi is not invertible')
         inv = np.array([np.array(row) for row in inv])
         for i in range(len(self.psi_list)):
             self.psi_list[i].transform(phi, inv)
@@ -76,6 +82,9 @@ class CDP:
                              f'should be {len(self.psi_list)}')
         if sum(beta_list) != 0:
             raise ValueError('Sum of coefficients should be 0')
+        m = len(self.psi_list[0].affine_pieces[0].coefs) - 1
+        if len(v) != m:
+            raise ValueError(f'Wrong dimension of v: {len(v)}, should be {m}')
         for idx, psi in enumerate(self.psi_list):
             for piece in psi.affine_pieces:
                 for j, coef in enumerate(v):
@@ -116,35 +125,17 @@ class CDP:
             # A transforms base of one CDP to the base of another
             A = self._get_transform_matrix(V, G)
             A = linear_transformation(matrix(QQ, A))
-            # psi_list = []
-            # for p in self.psi_list:
-            #     psi = deepcopy(p)
-            #     print('before')
-            #     print(psi)
-            #     psi.transform(A, A_inv)
-            #     print(psi)
-            #     psi_list.append(psi)
             cdp_after_base_transform = deepcopy(self)
-            cdp_after_base_transform.transform_base(A)
-            # print('psi1 ')
-            # print(psi_list[0])
-            # print('psi2 ')
-            # print(psi_list[1])
+            try:
+                cdp_after_base_transform.transform_base(A)
+            except ValueError:
+                continue
             all_sums_are_equal = True
             for vert in cdp_after_base_transform.base.vertices():
                 sum1 = sum([p.value(vert) for p in cdp_after_base_transform.psi_list])
                 sum2 = sum([p.value(vert) for p in other_cdp.psi_list])
                 if sum1 != sum2:
                     all_sums_are_equal = False
-            # for j, i in enumerate(perm):
-            #     print("Self vtx ", self.base.vertices()[i], "other vtx ", other_cdp.base.vertices()[j])
-            #     sum1 = sum([p.value(self.base.vertices()[i]) for p in psi_list])
-            #     sum2 = sum([p.value(other_cdp.base.vertices()[j]) for p in other_cdp.psi_list])
-            #     print(sum([p.value(self.base.vertices()[i]) for p in self.psi_list]))
-            #     print(sum1, sum2)
-            #     if sum1 != sum2:
-            #         all_sums_are_equal = False
-
             if all_sums_are_equal:
                 return True
         return False
