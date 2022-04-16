@@ -63,6 +63,7 @@ class CDP:
         except ZeroDivisionError:
             raise ValueError(f'phi is not invertible')
         inv = np.array([np.array(row) for row in inv])
+        # print("invert ", inv)
         for i in range(len(self.psi_list)):
             self.psi_list[i].transform(phi, inv)
 
@@ -131,11 +132,16 @@ class CDP:
             except ValueError:
                 continue
             all_sums_are_equal = True
+            # print(perm)
+            # print(A)
+            # print(cdp_after_base_transform)
             for vert in cdp_after_base_transform.base.vertices():
                 sum1 = sum([p.value(vert) for p in cdp_after_base_transform.psi_list])
                 sum2 = sum([p.value(vert) for p in other_cdp.psi_list])
                 if sum1 != sum2:
+                    # print("non equal", sum1, sum2, vert)
                     all_sums_are_equal = False
+                    break
             if all_sums_are_equal:
                 return True
         return False

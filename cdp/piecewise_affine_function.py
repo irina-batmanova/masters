@@ -1,6 +1,7 @@
 #!/usr/bin/env sage
 from typing import List
 from sage.all import *
+import numpy as np
 
 
 class AffineFunction:
@@ -59,10 +60,9 @@ class PiecewiseAffineFunction:
     # TODO: аргументы похожи по смыслу, но имеют разный тип - поправить
     def transform(self, phi, phi_inverse):
         for j in range(len(self.affine_pieces)):
-            res = self.affine_pieces[j].coefs[1:] * phi_inverse
-            res = res.tolist()[0]
-            res = [self.affine_pieces[j].coefs[0]] + res
-            self.affine_pieces[j].coefs = res
+            res = np.matmul(self.affine_pieces[j].coefs[1:], phi_inverse)
+            self.affine_pieces[j].coefs = [self.affine_pieces[j].coefs[0]]
+            self.affine_pieces[j].coefs.extend(res)
             vertices = []
             for vert in self.affine_pieces[j].domain.vertices():
                 vertices.append(phi(vert.vector()))

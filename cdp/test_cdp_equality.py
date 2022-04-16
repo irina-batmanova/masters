@@ -65,7 +65,8 @@ class TestCDPEquality:
         cdp1 = CDP([f_1, f_2], base1)
         cdp2 = deepcopy(cdp1)
         cdp2.shear([1, -1], [1, 1])
-        print(cdp2)
+        phi = linear_transformation(matrix(ZZ, [[-1, 0], [0, -1]]))
+        cdp2.transform_base(phi)
         assert cdp1.equal(cdp2)
 
 
@@ -74,7 +75,8 @@ test.test_1d_equal()
 test.test_1d_not_equal()
 test.test_2d_equal()
 
-
+# TODO: why this transfomation breaks everything?
+# phi = linear_transformation(matrix(ZZ, [[-1, 1], [0, -1]]))
 
 # base1 = Polyhedron(vertices=[[3, 0], [0, 0], [0, -1]])
 # f1 = PiecewiseAffineFunction([AffineFunction([12, -4, 12, 3], deepcopy(base1))])
