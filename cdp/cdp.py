@@ -42,6 +42,10 @@ class CDP:
         # TODO: is there a better solution for vertices traversal?
         self.base_adjacency_map = defaultdict(set)
 
+    def __str__(self):
+        psi_str = "\n".join([str(psi) for psi in self.psi_list])
+        return f'CDP object, psi list: {psi_str},\nbase: {self.base.vertices()}'
+
     def _build_adjacency_map(self):
         for i in range(self.k):
             for j in range(i + 1, self.k):
@@ -50,15 +54,16 @@ class CDP:
                     self.base_adjacency_map[j].add(i)
 
     def transform_base(self, phi: linear_transformation):
-        #         if len(phi.matrix()) != len(self.base.vertices()[0]._vector):
-        #             raise ValueError(f'Wrong dimension of phi: {len(phi.matrix())}')
         vertices = []
         for vert in self.base.vertices():
             vertices.append(phi(vert.vector()))
         self.base = Polyhedron(vertices=vertices)
-        inv = phi.inverse().matrix()
-        # TODO: optimize
+        try:
+            inv = phi.inverse().matrix()
+        except ZeroDivisionError:
+            raise ValueError(f'phi is not invertible')
         inv = np.array([np.array(row) for row in inv])
+        # print("invert ", inv)
         for i in range(len(self.psi_list)):
             self.psi_list[i].transform(phi, inv)
 
@@ -78,6 +83,9 @@ class CDP:
                              f'should be {len(self.psi_list)}')
         if sum(beta_list) != 0:
             raise ValueError('Sum of coefficients should be 0')
+        m = len(self.psi_list[0].affine_pieces[0].coefs) - 1
+        if len(v) != m:
+            raise ValueError(f'Wrong dimension of v: {len(v)}, should be {m}')
         for idx, psi in enumerate(self.psi_list):
             for piece in psi.affine_pieces:
                 for j, coef in enumerate(v):
@@ -112,34 +120,28 @@ class CDP:
         G = np.array([np.array(vert.vector()) for vert in other_cdp.base.vertices()])
         G = G.T
         for perm in permutations([i for i in range(self.k)]):
-            print("perm ", perm)
             if not self._vert_permutation_is_valid(perm):
-                print("perm not valid")
                 continue
             V = np.array([np.array(self.base.vertices()[i].vector()) for i in perm])
             # A transforms base of one CDP to the base of another
             A = self._get_transform_matrix(V, G)
-            print(A)
-            try:
-                A_inv = np.linalg.inv(A)
-            except np.linalg.LinAlgError:
-                continue
-            print(A_inv)
             A = linear_transformation(matrix(QQ, A))
-            psi_list = []
-            for p in self.psi_list:
-                psi = deepcopy(p)
-                psi.transform(A, A_inv)
-                psi_list.append(psi)
-
+            cdp_after_base_transform = deepcopy(self)
+            try:
+                cdp_after_base_transform.transform_base(A)
+            except ValueError:
+                continue
             all_sums_are_equal = True
-            for j, i in enumerate(perm):
-                print(self.base.vertices()[i], other_cdp.base.vertices()[j])
-                sum1 = sum([p.value(self.base.vertices()[i]) for p in psi_list])
-                sum2 = sum([p.value(other_cdp.base.vertices()[j]) for p in other_cdp.psi_list])
-                print(sum1, sum2)
+            # print(perm)
+            # print(A)
+            # print(cdp_after_base_transform)
+            for vert in cdp_after_base_transform.base.vertices():
+                sum1 = sum([p.value(vert) for p in cdp_after_base_transform.psi_list])
+                sum2 = sum([p.value(vert) for p in other_cdp.psi_list])
                 if sum1 != sum2:
+                    # print("non equal", sum1, sum2, vert)
                     all_sums_are_equal = False
+                    break
             if all_sums_are_equal:
                 return True
         return False
