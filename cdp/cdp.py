@@ -5,6 +5,8 @@ from piecewise_affine_function import PiecewiseAffineFunction
 from collections import defaultdict
 from itertools import permutations
 import numpy as np
+from sympy.matrices import Matrix
+from sympy import Rational
 
 
 class CDP:
@@ -145,3 +147,63 @@ class CDP:
             if all_sums_are_equal:
                 return True
         return False
+
+
+def generate_cdp_from_polytope(p: Polyhedron):
+    # Walk over all facets, if facet's normal projection to x_n is positive -
+    # this facet if a part of psi_1 graph, otherwise - part of -psi_2 grapg
+
+    # def facet_normal_projection(facet):
+    #     let's have a look at the equiation of a hyperplane defined by facet's vertices (p_11, ..., p_1n),
+    #     ..., (p_n1, ..., p_nn)
+    #     #     |x_1 - p_11, ...,   x_n - p_1n|
+    #     #     |p_21 - p_11, ..., p_2n - p_1n|
+    #     # det |           ....              |  = 0
+    #     #     |p_n1 - p_11, ..., p_nn - p_1n|
+    #     # we need a coefficient in front of x_n (that's the last coordinate of the normal
+    #     # vector of the plane, which is a projection of a this vector to x_n),
+    #     # so we чhave to find minor for x_n - p_1n
+    #     verts = facet.vertices()
+    #     mtx = []
+    #     v0 = verts[0].vector()
+    #     for vert in verts[1:len(v0)]:
+    #         v = vert.vector()
+    #         mtx.append(np.array([v[i] - v0[i] for i in range(len(v0) - 1)]))
+    #     print(v0)
+    #     print([vert.vector() for vert in verts[1:len(v0)]])
+    #     mtx = np.array(mtx)
+    #     print(mtx)
+    #     d = np.linalg.det(mtx)
+    #     coef = (-1) ** (1 + len(v0)) * d
+    #     print(coef)
+    #     print("\n")
+    #     return coef
+
+    # (p_11, ..., p_1n), ..., (p_n1, ..., p_nn)
+    # p_11, p_21, ..., p_n1
+    #         ...             = P
+    # p_1n, p_2n, ..., p_nn
+    # AP = b, b = (1, ..., 1) => A = bP^-1
+    def plane_from_points(points):
+        points = points[:len(points[0])]
+        b = Matrix([[1 for i in range(len(points[0]))]])
+        P = Matrix([p for p in points]).T
+        return b * P.inv()
+
+    psi1 = []
+    psi2 = []
+    for facet in p.facets():
+        coef = facet.normal_cone().rays_list()[0][-1]
+        if coef > 0:
+            psi1.append(facet.vertices())
+        elif coef < 0:
+            psi2.append(facet.vertices())
+    print(plane_from_points([p.vector() for p in psi1[1]]))
+    # print(psi1)
+    # print("\n\n\n")
+    # print(psi2)
+
+
+poly = Polyhedron(vertices=[[1, 0, 0], [0, 1, 0], [0, 0, 1], [-1, 0, 0],
+                            [0, 0, -1]])
+generate_cdp_from_polytope(poly)

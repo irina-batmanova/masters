@@ -77,11 +77,3 @@ test.test_2d_equal()
 
 # TODO: why this transfomation breaks everything?
 # phi = linear_transformation(matrix(ZZ, [[-1, 1], [0, -1]]))
-
-# base1 = Polyhedron(vertices=[[3, 0], [0, 0], [0, -1]])
-# f1 = PiecewiseAffineFunction([AffineFunction([12, -4, 12, 3], deepcopy(base1))])
-# cdp1 = CDP([f1], base1)
-# base2 = Polyhedron(vertices=[[4, 0], [0, 0], [0, -3]])
-# f2 = PiecewiseAffineFunction([AffineFunction([60, -15, 20, -12], deepcopy(base2))])
-# cdp2 = CDP([f2], base2)
-# print(cdp1.equal(cdp2))
