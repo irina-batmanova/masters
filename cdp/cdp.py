@@ -1,12 +1,12 @@
 #!/usr/bin/env sage
 from sage.all import *
 from typing import List
-from piecewise_affine_function import PiecewiseAffineFunction
+from piecewise_affine_function import PiecewiseAffineFunction, AffineFunction
 from collections import defaultdict
 from itertools import permutations
 import numpy as np
 from sympy.matrices import Matrix
-from sympy import Rational
+from sympy import Rational, lcm
 
 
 class CDP:
@@ -149,61 +149,56 @@ class CDP:
         return False
 
 
-def generate_cdp_from_polytope(p: Polyhedron):
+def generate_cdp_from_polytope(poly: Polyhedron):
     # Walk over all facets, if facet's normal projection to x_n is positive -
     # this facet if a part of psi_1 graph, otherwise - part of -psi_2 grapg
 
-    # def facet_normal_projection(facet):
-    #     let's have a look at the equiation of a hyperplane defined by facet's vertices (p_11, ..., p_1n),
-    #     ..., (p_n1, ..., p_nn)
-    #     #     |x_1 - p_11, ...,   x_n - p_1n|
-    #     #     |p_21 - p_11, ..., p_2n - p_1n|
-    #     # det |           ....              |  = 0
-    #     #     |p_n1 - p_11, ..., p_nn - p_1n|
-    #     # we need a coefficient in front of x_n (that's the last coordinate of the normal
-    #     # vector of the plane, which is a projection of a this vector to x_n),
-    #     # so we чhave to find minor for x_n - p_1n
-    #     verts = facet.vertices()
-    #     mtx = []
-    #     v0 = verts[0].vector()
-    #     for vert in verts[1:len(v0)]:
-    #         v = vert.vector()
-    #         mtx.append(np.array([v[i] - v0[i] for i in range(len(v0) - 1)]))
-    #     print(v0)
-    #     print([vert.vector() for vert in verts[1:len(v0)]])
-    #     mtx = np.array(mtx)
-    #     print(mtx)
-    #     d = np.linalg.det(mtx)
-    #     coef = (-1) ** (1 + len(v0)) * d
-    #     print(coef)
-    #     print("\n")
-    #     return coef
-
-    # (p_11, ..., p_1n), ..., (p_n1, ..., p_nn)
-    # p_11, p_21, ..., p_n1
-    #         ...             = P
-    # p_1n, p_2n, ..., p_nn
-    # AP = b, b = (1, ..., 1) => A = bP^-1
     def plane_from_points(points):
+        # (p_11, ..., p_1n), ..., (p_n1, ..., p_nn)
+        # p_11, p_21, ..., p_n1
+        #         ...             = P
+        # p_1n, p_2n, ..., p_nn
+        # AP = b, b = (1, ..., 1) => A = bP^-1
         points = points[:len(points[0])]
         b = Matrix([[1 for i in range(len(points[0]))]])
         P = Matrix([p for p in points]).T
-        return b * P.inv()
+        A = b * P.inv()
+        return list(A.row(0))
 
-    psi1 = []
-    psi2 = []
-    for facet in p.facets():
+    def integer_coefs_from_rational(coefs):
+        qs = [c.q for c in coefs]
+        l = lcm(qs)
+        coefs = [c * l for c in coefs]
+        return [c / coefs[-1] for c in coefs]
+
+    def piecewise_from_facets(facets):
+        pieces = []
+        for facet in facets:
+            # Find a plane equation with rational coefficients from facet's vertices
+            # and multiply by least common multiple of denominators to obtain integer
+            # coefficients.
+            r = integer_coefs_from_rational([Rational(1)] + plane_from_points([p.vector() for p in facet]))
+            pieces.append(AffineFunction(coefficients=r[:-1], domain=Polyhedron(
+                vertices=[p.vector()[:-1] for p in facet])))
+        return PiecewiseAffineFunction(affine_pieces=pieces)
+
+    psi1_facets = []
+    psi2_facets = []
+    # TODO: куда будут отнесены "горизонтальные" грани?
+    # TODO: больше тестов
+    for facet in poly.facets():
+        # Find out whether a facet belongs to psi1 or psi2
         coef = facet.normal_cone().rays_list()[0][-1]
         if coef > 0:
-            psi1.append(facet.vertices())
+            psi1_facets.append(facet.vertices())
         elif coef < 0:
-            psi2.append(facet.vertices())
-    print(plane_from_points([p.vector() for p in psi1[1]]))
-    # print(psi1)
-    # print("\n\n\n")
-    # print(psi2)
+            psi2_facets.append(facet.vertices())
+    psi1 = piecewise_from_facets(psi1_facets)
+    psi2 = piecewise_from_facets(psi2_facets)
+    return CDP(psi_list=[psi1, psi2], base=Polyhedron(vertices=[v.vector()[:-1] for v in poly.vertices()]))
 
 
 poly = Polyhedron(vertices=[[1, 0, 0], [0, 1, 0], [0, 0, 1], [-1, 0, 0],
                             [0, 0, -1]])
-generate_cdp_from_polytope(poly)
+cdp = generate_cdp_from_polytope(poly)
+print(cdp)
