@@ -115,7 +115,8 @@ class CDP:
 
     def equal(self, other_cdp):
         # Check that self.base is convertible to other_cdp.base with some phi
-        # Check that sum(psi_i) stays the same on whole base (check on vertices)
+        # Check that a constant for translation exists
+        # Check that a vector for shearing exists
         if len(self.base.vertices()) != len(other_cdp.base.vertices()):
             print("lengths are different")
             return False
@@ -133,19 +134,17 @@ class CDP:
                 cdp_after_base_transform.transform_base(A)
             except ValueError:
                 continue
-            all_sums_are_equal = True
-            # print(perm)
-            # print(A)
-            # print(cdp_after_base_transform)
-            for vert in cdp_after_base_transform.base.vertices():
-                sum1 = sum([p.value(vert) for p in cdp_after_base_transform.psi_list])
-                sum2 = sum([p.value(vert) for p in other_cdp.psi_list])
-                if sum1 != sum2:
-                    # print("non equal", sum1, sum2, vert)
-                    all_sums_are_equal = False
-                    break
-            if all_sums_are_equal:
-                return True
+
+
+            # all_sums_are_equal = True
+            # for vert in cdp_after_base_transform.base.vertices():
+            #     sum1 = sum([p.value(vert) for p in cdp_after_base_transform.psi_list])
+            #     sum2 = sum([p.value(vert) for p in other_cdp.psi_list])
+            #     if sum1 != sum2:
+            #         all_sums_are_equal = False
+            #         break
+            # if all_sums_are_equal:
+            #     return True
         return False
 
 
