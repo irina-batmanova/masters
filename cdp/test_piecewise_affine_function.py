@@ -21,7 +21,27 @@ class TestPiecewiseAffineFunctionStr:
         assert f.__str__() == 'Piecewise affine function:\nAffine function 1 + x_1 with domain [(-1), (0)]\n' \
                               'Affine function 1 - x_1 with domain [(0), (1)]'
 
+    def test_equality(self):
+        f_1 = AffineFunction([1, 1], Polyhedron(vertices=[[-1], [0]]))
+        f_2 = AffineFunction([1, -1], Polyhedron(vertices=[[0], [1]]))
+        f = PiecewiseAffineFunction([f_1, f_2])
+        g_1 = AffineFunction([1, 1], Polyhedron(vertices=[[-1], [0]]))
+        g_2 = AffineFunction([1, -1], Polyhedron(vertices=[[0], [1]]))
+        g = PiecewiseAffineFunction([g_2, g_1])
+        assert f == g
+
+    def test_inequality(self):
+        f_1 = AffineFunction([1, 1], Polyhedron(vertices=[[-1], [0]]))
+        f_2 = AffineFunction([1, -1], Polyhedron(vertices=[[0], [1]]))
+        f = PiecewiseAffineFunction([f_1, f_2])
+        g_1 = AffineFunction([-1, 1], Polyhedron(vertices=[[-1], [0]]))
+        g_2 = AffineFunction([1, -1], Polyhedron(vertices=[[0], [1]]))
+        g = PiecewiseAffineFunction([g_2, g_1])
+        assert not f == g
+
 
 test = TestPiecewiseAffineFunctionStr()
 test.test_1_piece()
 test.test_2_pieces()
+test.test_equality()
+test.test_inequality()
