@@ -32,8 +32,40 @@ class TestCDPValidity:
             pass
         else:
             assert True
+
+    def test_equality(self):
+        base = Polyhedron(vertices=[[-1], [1]])
+        f_11 = AffineFunction([1, 1], Polyhedron(vertices=[[-1], [0]]))
+        f_12 = AffineFunction([1, -1], Polyhedron(vertices=[[0], [1]]))
+        f_1 = PiecewiseAffineFunction([f_11, f_12])
+        f_2 = PiecewiseAffineFunction([AffineFunction([1 / 2, 1 / 2], Polyhedron(vertices=[[-1], [1]]))])
+        cdp1 = CDP([f_1, f_2], base)
+        base2 = Polyhedron(vertices=[[-1], [1]])
+        g_11 = AffineFunction([1, 1], Polyhedron(vertices=[[-1], [0]]))
+        g_12 = AffineFunction([1, -1], Polyhedron(vertices=[[0], [1]]))
+        g_1 = PiecewiseAffineFunction([g_11, g_12])
+        g_2 = PiecewiseAffineFunction([AffineFunction([1 / 2, 1 / 2], Polyhedron(vertices=[[-1], [1]]))])
+        cdp2 = CDP([g_2, g_1], base2)
+        assert cdp1 == cdp2
+
+    def test_inequality(self):
+        base = Polyhedron(vertices=[[-1], [1]])
+        f_11 = AffineFunction([1, 1], Polyhedron(vertices=[[-1], [0]]))
+        f_12 = AffineFunction([1, -1], Polyhedron(vertices=[[0], [1]]))
+        f_1 = PiecewiseAffineFunction([f_11, f_12])
+        f_2 = PiecewiseAffineFunction([AffineFunction([1 / 2, 1 / 2], Polyhedron(vertices=[[-1], [1]]))])
+        cdp1 = CDP([f_1, f_2], base)
+        base2 = Polyhedron(vertices=[[-1], [2]])
+        g_11 = AffineFunction([1, 1], Polyhedron(vertices=[[-1], [0]]))
+        g_12 = AffineFunction([1, -1], Polyhedron(vertices=[[0], [2]]))
+        g_1 = PiecewiseAffineFunction([g_11, g_12])
+        g_2 = PiecewiseAffineFunction([AffineFunction([1 / 2, 1 / 2], Polyhedron(vertices=[[-1], [2]]))])
+        cdp2 = CDP([g_2, g_1], base2)
+        assert not cdp1 == cdp2
             
 
 test = TestCDPValidity()
 test.test_valid_cdp()
 test.test_not_valid_cdp()
+test.test_equality()
+test.test_inequality()

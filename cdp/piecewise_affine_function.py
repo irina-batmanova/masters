@@ -14,6 +14,9 @@ class AffineFunction:
         self.domain = domain
         self.dim = dim
 
+    def __eq__(self, other):
+        return self.coefs == other.coefs and self.domain == other.domain
+
     def value(self, x: List[int]):
         if x not in self.domain:
             raise ValueError(f'{x} is not in function domain {self.domain.vertices()}')
@@ -50,6 +53,14 @@ class PiecewiseAffineFunction:
         # TODO: проверить, что значения в вершинах многогранников одинаковые на смежных
         # кусках и целые
         self.affine_pieces = affine_pieces
+
+    def __eq__(self, other):
+        if not len(self.affine_pieces) == len(other.affine_pieces):
+            return False
+        for piece in self.affine_pieces:
+            if not piece in other.affine_pieces:
+                return False
+        return True
 
     def value(self, x: List[int]):
         for piece in self.affine_pieces:
