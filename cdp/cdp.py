@@ -159,11 +159,12 @@ def generate_cdp_from_polytope(poly: Polyhedron):
         #         ...             = P
         # p_1n, p_2n, ..., p_nn
         # AP = b, b = (1, ..., 1) => A = bP^-1
+        # 1 - a_1*x_1 - ... - a_n*x_n = 0, return [1, -a1, ..., -a_n]
         points = points[:len(points[0])]
         b = Matrix([[1 for i in range(len(points[0]))]])
-        P = Matrix([p for p in points]).T
+        P = Matrix(points).T
         A = b * P.inv()
-        return list(A.row(0))
+        return [Rational(1)] + [-a for a in list(A.row(0))]
 
     def integer_coefs_from_rational(coefs):
         qs = [c.q for c in coefs]
@@ -177,15 +178,13 @@ def generate_cdp_from_polytope(poly: Polyhedron):
             # Find a plane equation with rational coefficients from facet's vertices
             # and multiply by least common multiple of denominators to obtain integer
             # coefficients.
-            r = integer_coefs_from_rational([Rational(1)] + plane_from_points([p.vector() for p in facet]))
+            r = integer_coefs_from_rational(plane_from_points([p.vector() for p in facet]))
             pieces.append(AffineFunction(coefficients=r[:-1], domain=Polyhedron(
                 vertices=[p.vector()[:-1] for p in facet])))
         return PiecewiseAffineFunction(affine_pieces=pieces)
 
     psi1_facets = []
     psi2_facets = []
-    # TODO: куда будут отнесены "горизонтальные" грани?
-    # TODO: больше тестов
     for facet in poly.facets():
         # Find out whether a facet belongs to psi1 or psi2
         coef = facet.normal_cone().rays_list()[0][-1]
@@ -197,8 +196,3 @@ def generate_cdp_from_polytope(poly: Polyhedron):
     psi2 = piecewise_from_facets(psi2_facets)
     return CDP(psi_list=[psi1, psi2], base=Polyhedron(vertices=[v.vector()[:-1] for v in poly.vertices()]))
 
-
-poly = Polyhedron(vertices=[[1, 0, 0], [0, 1, 0], [0, 0, 1], [-1, 0, 0],
-                            [0, 0, -1]])
-cdp = generate_cdp_from_polytope(poly)
-print(cdp)
