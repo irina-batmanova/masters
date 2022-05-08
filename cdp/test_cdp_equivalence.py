@@ -83,12 +83,11 @@ class TestCDPEquality:
         cdp = CDP([f_1, f_2], base1)
         classes = [[0, 1, 2], [0, 1, 2], [0, 1, 2], [3, 4], [3, 4]]
         res = cdp._list_mappings(classes)
-        print(res)
         assert False
 
 
 test = TestCDPEquality()
-# test.test_1d_equal()
-# test.test_1d_not_equal()
-# test.test_2d_equal()
-test.test_list_mappings()
+test.test_1d_equal()
+test.test_1d_not_equal()
+test.test_2d_equal()
+# test.test_list_mappings()

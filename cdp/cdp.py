@@ -178,6 +178,9 @@ class CDP:
         return True
 
     def _can_be_sheared(self, mapping, other_psi_list):
+        for i, j in enumerate(mapping):
+            if not self.psi_list[i].cat_be_sheared(other_psi_list[j]):
+                return False
         return True
 
     def equal(self, other_cdp):
@@ -199,7 +202,7 @@ class CDP:
                 continue
             V = np.array([np.array(self.base.vertices()[i].vector()) for i in perm])
             # A transforms base of one CDP to the base of another
-            A = _get_transform_matrix(V, G)
+            A = self._get_transform_matrix(V, G)
             A = linear_transformation(matrix(QQ, A))
             cdp_after_base_transform = deepcopy(self)
             try:
@@ -214,7 +217,7 @@ class CDP:
                 can = cdp_after_base_transform._can_be_translated(m, other_cdp.psi_list)
                 if not can:
                     continue
-                can = cdp_after_base_transform._can_be_sheared()
+                can = cdp_after_base_transform._can_be_sheared(m, other_cdp.psi_list)
                 if not can:
                     continue
                 return True
