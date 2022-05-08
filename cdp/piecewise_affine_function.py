@@ -79,6 +79,37 @@ class PiecewiseAffineFunction:
                 vertices.append(phi(vert.vector()))
             self.affine_pieces[j].domain = Polyhedron(vertices=vertices)
 
+    def _domains_mapping(self, other_psi):
+        if len(self.affine_pieces) != len(other_psi.affine_pieces):
+            return False, 0
+        domains_mapping = [0 for _ in range(len(other_psi.affine_pieces))]
+        for i, piece in enumerate(self.affine_pieces):
+            for j, other_piece in enumerate(other_psi.affine_pieces):
+                if piece.domain == other_piece.domain:
+                    domains_mapping[i] = j
+        return domains_mapping
+
+    def can_be_translated(self, other_psi):
+        domains_mapping = self._domains_mapping(other_psi)
+        alpha = other_psi.affine_pieces[domains_mapping[0]].coefs[0] - self.affine_pieces[0].coefs[0]
+        for i in range(1, len(domains_mapping)):
+            a = other_psi.affine_pieces[domains_mapping[i]].coefs[0] - self.affine_pieces[i].coefs[0]
+            if a != alpha:
+                return False, 0
+        return True, alpha
+
+    def cat_be_sheared(self, other_psi):
+        domains_mapping = self._domains_mapping(other_psi)
+        n = len(other_psi.affine_pieces[domains_mapping[0]].coefs)
+        v = [other_psi.affine_pieces[domains_mapping[0]].coefs[i] - self.affine_pieces[0].coefs[i]
+             for i in range(1, n)]
+        for j in range(1, len(domains_mapping)):
+            other_v = [other_psi.affine_pieces[domains_mapping[j]].coefs[i] - self.affine_pieces[j].coefs[i]
+                for i in range(1, n)]
+            if other_v != v:
+                return False
+        return True
+
     def __str__(self):
         resp = '\n'.join([str(piece) for piece in self.affine_pieces])
         return 'Piecewise affine function:\n' + resp

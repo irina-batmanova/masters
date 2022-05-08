@@ -69,11 +69,25 @@ class TestCDPEquality:
         cdp2.transform_base(phi)
         assert cdp1.equal(cdp2)
 
+    def test_list_mappings(self):
+        base1 = Polyhedron(vertices=[[1, 0], [0, -1], [-1, 0], [0, 1]])
+        f_11 = AffineFunction([1, -1, -1], Polyhedron(vertices=[[0, 0], [1, 0], [0, 1]]))
+        f_12 = AffineFunction([1, -1, 1], Polyhedron(vertices=[[0, 0], [1, 0], [0, -1]]))
+        f_13 = AffineFunction([1, 1, -1], Polyhedron(vertices=[[0, 0], [-1, 0], [0, 1]]))
+        f_14 = AffineFunction([1, 1, 1], Polyhedron(vertices=[[0, 0], [-1, 0], [0, -1]]))
+        f_1 = PiecewiseAffineFunction([f_11, f_12, f_13, f_14])
+        f_21 = AffineFunction([1, 0, 0], Polyhedron(vertices=[[0, 1], [1, 0], [0, -1]]))
+        f_22 = AffineFunction([1, 1, 1], Polyhedron(vertices=[[0, 0], [0, -1], [-1, 0]]))
+        f_23 = AffineFunction([1, 1, -1], Polyhedron(vertices=[[0, 0], [-1, 0], [0, 1]]))
+        f_2 = PiecewiseAffineFunction([f_21, f_22, f_23])
+        cdp = CDP([f_1, f_2], base1)
+        classes = [[0, 1, 2], [0, 1, 2], [0, 1, 2], [3, 4], [3, 4]]
+        res = cdp._list_mappings(classes)
+        assert False
+
 
 test = TestCDPEquality()
 test.test_1d_equal()
 test.test_1d_not_equal()
 test.test_2d_equal()
-
-# TODO: why this transfomation breaks everything?
-# phi = linear_transformation(matrix(ZZ, [[-1, 1], [0, -1]]))
+# test.test_list_mappings()

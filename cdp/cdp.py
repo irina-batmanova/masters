@@ -126,11 +126,74 @@ class CDP:
         A = np.matmul(np.matmul(point_images, points), inverse)
         return A
 
+    def _domains_match(self, psi1: PiecewiseAffineFunction, psi2: PiecewiseAffineFunction) -> bool:
+        if len(psi1.affine_pieces) != len(psi2.affine_pieces):
+            return False
+        return set([p.domain for p in psi1.affine_pieces]) == set([p.domain for p in psi2.affine_pieces])
+
+    def _get_equivalence_classes(self, other_psi_list):
+        used = [False for _ in range(len(other_psi_list))]
+        classes = [[] for _ in range(len(self.psi_list))]
+        for i, psi1 in enumerate(self.psi_list):
+            for j, psi2 in enumerate(other_psi_list):
+                if self._domains_match(psi1, psi2):
+                    used[j] = True
+                    classes[i].append(j)
+        if len([c for c in classes if len(c) == 0]) > 0 or len([u for u in used if not u]) > 0:
+            return False, []
+        return True, classes
+
+    def _list_mappings(self, classes):
+        dicts_res = self._list_mappings_recursive(classes, dict(), idx=0)
+        res = []
+        for small_res in dicts_res:
+            res.append([0] * len(classes))
+            for k, v in small_res.items():
+                res[-1][v] = k
+        return res
+
+    def _list_mappings_recursive(self, classes, current_dict, idx=0):
+        res = []
+        for elem in classes[idx]:
+            if elem in current_dict:
+                continue
+            if idx + 1 == len(classes):
+                d = deepcopy(current_dict)
+                d[elem] = idx
+                return [d]
+            d = deepcopy(current_dict)
+            d[elem] = idx
+            res += self._list_mappings_recursive(classes, d, idx + 1)
+        return res
+
+    def _can_be_translated(self, mapping, other_psi_list):
+        alpha_list = []
+        for i, j in enumerate(mapping):
+            can, alpha = self.psi_list[i].can_be_translated(other_psi_list[j])
+            if not can:
+                return False
+            alpha_list.append(alpha)
+        if sum(alpha_list) != 0:
+            return False
+        return True
+
+    def _can_be_sheared(self, mapping, other_psi_list):
+        for i, j in enumerate(mapping):
+            if not self.psi_list[i].cat_be_sheared(other_psi_list[j]):
+                return False
+        return True
+
     def equal(self, other_cdp):
+        """
+        Suppose that zero functions are already removed
+        """
         # Check that self.base is convertible to other_cdp.base with some phi
-        # Check that sum(psi_i) stays the same on whole base (check on vertices)
+        # Check that psi lists split into matching equivalence classes
+        # Check that a constant for translation exists
+        # Check that a vector for shearing exists
         if len(self.base.vertices()) != len(other_cdp.base.vertices()):
-            print("lengths are different")
+            return False
+        if len(self.psi_list) != len(other_cdp.psi_list):
             return False
         G = np.array([np.array(vert.vector()) for vert in other_cdp.base.vertices()])
         G = G.T
@@ -146,18 +209,17 @@ class CDP:
                 cdp_after_base_transform.transform_base(A)
             except ValueError:
                 continue
-            all_sums_are_equal = True
-            # print(perm)
-            # print(A)
-            # print(cdp_after_base_transform)
-            for vert in cdp_after_base_transform.base.vertices():
-                sum1 = sum([p.value(vert) for p in cdp_after_base_transform.psi_list])
-                sum2 = sum([p.value(vert) for p in other_cdp.psi_list])
-                if sum1 != sum2:
-                    # print("non equal", sum1, sum2, vert)
-                    all_sums_are_equal = False
-                    break
-            if all_sums_are_equal:
+            splits, classes = cdp_after_base_transform._get_equivalence_classes(other_cdp.psi_list)
+            if not splits:
+                continue
+            mappings = cdp_after_base_transform._list_mappings(classes)
+            for m in mappings:
+                can = cdp_after_base_transform._can_be_translated(m, other_cdp.psi_list)
+                if not can:
+                    continue
+                can = cdp_after_base_transform._can_be_sheared(m, other_cdp.psi_list)
+                if not can:
+                    continue
                 return True
         return False
 
