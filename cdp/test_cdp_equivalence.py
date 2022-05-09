@@ -1,7 +1,7 @@
 #!/usr/bin/env sage
 from sage.all import *
 from piecewise_affine_function import AffineFunction, PiecewiseAffineFunction
-from cdp import CDP
+from cdp import CDP, generate_cdp_from_polytope
 
 
 class TestCDPEquality:
@@ -85,9 +85,50 @@ class TestCDPEquality:
         res = cdp._list_mappings(classes)
         assert False
 
+    def test_on_thoric_variety(self):
+        poly = Polyhedron(vertices=[[-2, 0], [0, 2], [1, 2], [2, 1], [2, -2], [-2, -2]])
+        cdp = generate_cdp_from_polytope(poly)
+        cdp2 = deepcopy(cdp)
+        phi = linear_transformation(matrix(ZZ, [[-1]]))
+        cdp2.transform_base(phi)
+        cdp2.shear([-2, 2], [2])
+        assert cdp.equal(cdp2)
+
+    def test_on_2d_thoric_variety(self):
+        poly = Polyhedron(vertices=[[1, 0, 0], [0, 1, 0], [0, 0, 1], [-1, 0, 0],
+                                    [0, 0, -1]])
+        cdp = generate_cdp_from_polytope(poly)
+        cdp2 = deepcopy(cdp)
+        cdp2.shear([-2, 2], [2, 2])
+        cdp2.translate([-3, 3])
+        phi = linear_transformation(matrix(ZZ, [[-1, 0], [0, 1]]))
+        cdp2.transform_base(phi)
+        assert cdp.equal(cdp2)
+
+    def test_many_functions(self):
+        base1 = Polyhedron(vertices=[[-1], [1]])
+        # y = 1 + x, x \in [-1, 0]
+        f_11 = AffineFunction([1, 1], Polyhedron(vertices=[[-1], [0]]))
+        # y = 1 - x, x \in [0, 1]
+        f_12 = AffineFunction([1, -1], Polyhedron(vertices=[[0], [1]]))
+        f_1 = PiecewiseAffineFunction([f_11, f_12])
+        # y = 1/2 + 1/2x, x \in [-1, 1]
+        f_2 = PiecewiseAffineFunction([AffineFunction([1 / 2, 1 / 2], Polyhedron(vertices=[[-1], [1]]))])
+        y_11 = AffineFunction([2, 2], Polyhedron(vertices=[[-1], [0]]))
+        y_12 = AffineFunction([2, -2], Polyhedron(vertices=[[0], [1]]))
+        y_1 = PiecewiseAffineFunction([y_11, y_12])
+        cdp1 = CDP([f_1, f_2, y_1], base1)
+        cdp2 = deepcopy(cdp1)
+        cdp2.shear([2, -1, -1], [-3])
+        cdp2.translate([-2, 1, 1])
+        assert cdp1.equal(cdp2)
+
 
 test = TestCDPEquality()
-test.test_1d_equal()
-test.test_1d_not_equal()
-test.test_2d_equal()
+# test.test_1d_equal()
+# test.test_1d_not_equal()
+# test.test_2d_equal()
 # test.test_list_mappings()
+test.test_on_thoric_variety()
+test.test_on_2d_thoric_variety()
+test.test_many_functions()
