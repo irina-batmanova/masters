@@ -106,6 +106,10 @@ class CDP:
                 for j, coef in enumerate(v):
                     piece.coefs[j + 1] += coef * beta_list[idx]
 
+    def is_fano(self):
+        # TODO: move gravity center to zero - nearest integer (or any internal integer point, if none - blow up twice)
+        pass
+
     def _vert_permutation_is_valid(self, perm):
         """Check that vertices permutation saves incidence
         """
@@ -222,6 +226,16 @@ class CDP:
                     continue
                 return True
         return False
+
+
+def facet_is_at_height_one(vertices):
+    verts = vertices[:len(vertices[0])]
+    verts = np.array([np.array(v) for v in verts])
+    u = np.ravel(np.matmul(np.linalg.inv(verts), np.ones((len(verts), 1))))
+    for x in u:
+        if not x.is_integer():
+            return False
+    return True
 
 
 def generate_cdp_from_polytope(poly: Polyhedron):
