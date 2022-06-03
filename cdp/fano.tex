@@ -1,0 +1,106 @@
+\documentclass[16pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{ amssymb }
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{ dsfont }
+\newtheorem{theorem}{Теорема}[section]
+\newtheorem{lemma}[theorem]{Лемма}
+\usepackage{ upgreek }
+
+
+\title{Магистерский диплом}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Определение}[section]
+
+
+
+
+
+\begin{document}
+
+\maketitle
+
+\section{Введение}
+
+\begin{definition}[CDP] 
+Комбинаторный дивизориальный многогранник (combinatorial divisorial polytope) относительно решетки M состоит из многогранника $\square \subset M \otimes \mathds{R}$ и кортежа $(\psi_1, \dots, \psi_n)$ кусочно-линейных вогнутых функций $\psi_i: \square \rightarrow \mathds{R}$ таких что
+\begin{itemize}
+	\item[1] Для всех $i$ граф $\psi_i$ - полиэдральный комплекс с целочисленными вершинами
+	\item[2] $\forall u \in \square^{\circ} \sum_{i=1}^n\psi_i(u) > 0$
+\end{itemize}
+$\square$ называется \emph{базой} CDP
+\end{definition}
+
+\\
+
+\subsection{Преобразования CDP}
+Пусть дан исходный CDP c набором функций $(\psi_1, \dots, \psi_n)$ и базой $\square$
+
+\begin{definition}[Трансформация базы (transformation of the base)]
+Пусть $\phi$ - линейное обратимое преобразование решетки $M$, тогда CDP с базой $\phi(\square)$ и набором функций 
+$\psi_i \circ \phi^{-1}$ получен из исходного с помощью  трансформации базы.
+\end{definition}
+
+\begin{definition}[Скашивание (shearing action)]
+Пусть $v \in M^*, \beta_1, \dots, \beta_n \in \mathds{Z}$, тогда CDP с базой $\square$ и набором функций $u \mapsto
+ \psi_i(u) + \beta_i<u, v>, \forall u \in \square$, получен из исходного с помощью скашивания.
+\end{definition}
+
+\begin{definition}[Перенос (translation)]
+Пусть $\alpha_1, \dots, \alpha_n \in \mathds{Z}
+$, $\sum_{i=1}^n \alpha_i = 0$, тогда CDP с базой $\square$ и набором функций $\psi_i + \alpha_i$ получен из исходного с помощью переноса.
+\end{definition}
+
+\subsection{Эквивалентность}
+\begin{definition}[Эквивалентные CDP]
+CDP, полученный из исходного с помощью преобразований скашивания, переноса и трансформации базы, примененных в любой последовательности и в любых количествах, эквивалентен исходному.
+\end{definition}
+
+\subsection{Свойство Фано}
+Для многогранника $\square$ обозначим его внутренность как $\square^{\circ}$ и границу как $\partial\square$. График функции $\psi_i$ обозначим как $\Gamma(\psi_i)$
+\begin{definition}[Грань высоты 1]
+	Грань $F$ многогранника $P \in (M \times \mathds{Z}) \otimes \mathds{R}$ является гранью высоты 1, если существует вектор $u \in M^* \times \mathds{Z}$ такой что $\langle v, u\rangle = 1$ для всех $v \in F$
+\end{definition}
+
+\begin{definition}[Свойство Фано]
+CDP обладает свойством Фано, если он эквивалентен какому-то CDP с базой $\square$ и функциями $\psi_1, \dots \psi_n$ для которого существуют коэффициенты $\a_1, \dots, \a_n$ такие что 
+\begin{enumerate}
+	\item $0 \in \square^{\circ}$
+	\item $\sum_{i=1}^n a_i = -2$
+	\item Для всех i $\psi_i(0) + a_i + 1 > 0$, и каждая грань $\Gamma(\psi_i + a_i + 1)$ - грань высоты 1
+	\item Для каждой грани $F$ многогранника $\square$ не являющейся гранью высоты 1 верно $\sum_{i=1}^n \psi_i \equiv 0$ на всей $F$
+\end{enumerate}
+\end{definition}
+% TODO: ссылка на статью
+Все свойства определения Фано сохраняются для эквивалентных CDP 
+\section{Алгоритм проверки Фано}
+Расширим определение грани высоты 1
+\begin{definition}[Грань высоты k]
+	Грань $F$ многогранника $P \in (M \times \mathds{Z}) \otimes \mathds{R}$ является гранью высоты $k$, если существует примитивный вектор $u \in M^* \times \mathds{Z}$ такой что $\langle v, u\rangle = k$ для всех $v \in F$
+\end{definition}
+
+\subsection{Описание алгоритма}
+\begin{enumerate}
+	\item Проверить, что $0 \in \square^{\circ}$
+	\item Для каждой грани графика каждой функции $\psi_1$ найдем высоту и соответствующий вектор u. Например, пусть $\Gamma(\psi_1)$ имеет $k$ граней, их высоты - $h_1, \dots, h_k$, последние координаты векторов $u_1, \dots, u_k$ - $x_1, \dots, x_k$. Чтобы CDP удовлетворял свойству Фано, нужно, чтобы все грани $\Gamma(\psi_1 + a_1 + 1)$ имели высоту 1, то есть $height(F_i^{'}) = 1$  для всех $F_i^{'}$. По лемме \ref{facet_height} $height(F_i^{'}) = h_i + (a_1 + 1)x_i$, то есть $a_1$ можно найти из уравнения $h_i + (a_1 + 1)x_i = 1$. Если $a_1$ получается целым и одинаковым для всех граней (для всех $k_i$, $x_i$) - аналогичным образом находим $a_2$ для $\psi_2$ и так далее. Если все $a_j$ получились целыми - проверяем, что их сумма равна -2. Если это верно - CDP удовлетворяет свойствам 2-3 определения Фано
+	\item Достаточно проверить, что суммы функций равны 0 на вершинах граней высоты не равной 1
+\end{enumerate}
+
+
+\subsection{Доказательство корректности}
+\begin{lemma}
+\label{facet_height}
+	Если высота грани $F \in \Gamma(\psi_i)$ равна $h$, и вектор $u$, такой что $\langle u, v\rangle = h$ для всех v, имеет координаты $(u_1, \dots, u_t)$, то высота грани $F^{'} \in \Gamma(\psi_i + b)$, соответствующей грани $F$, равна $h + b * u_t$. 
+\end{lemma}
+\begin{proof}
+	
+	$\psi_i$ - кусочно-линейная функция, пусть она выражается уравнением $x_t = a_0 + a_1 x_1 + \dots + a_{t-1}x_{t-1}$, тогда $\psi_i + b$ выражается уравнением  $x_t = a_0 + b + a_1x_1 + \dots + a_{t-1}x_{t-1}$. Известно, что $\langle x, u \rangle = x_1 u_x + \dots + x_t u_t = h$, тогда $\langle x', u = x_1 u_x + \dots + (x_t + b) u_t = h + b*u_t$, то есть высота грани $F'$ равна $h + b * u_t$
+\end{proof}
+	
+\end{document}	

@@ -48,10 +48,6 @@ class AffineFunction:
 
 class PiecewiseAffineFunction:
     def __init__(self, affine_pieces: List[AffineFunction]):
-        # TODO: check regularity
-        # TODO: check convexity
-        # TODO: проверить, что значения в вершинах многогранников одинаковые на смежных
-        # кусках и целые
         self.affine_pieces = affine_pieces
 
     def __eq__(self, other):
@@ -68,7 +64,6 @@ class PiecewiseAffineFunction:
                 return piece.value(x)
         raise ValueError(f'{x} is not in function domain')
 
-    # TODO: аргументы похожи по смыслу, но имеют разный тип - поправить
     def transform(self, phi, phi_inverse):
         for j in range(len(self.affine_pieces)):
             res = np.matmul(self.affine_pieces[j].coefs[1:], phi_inverse)

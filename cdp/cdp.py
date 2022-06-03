@@ -22,8 +22,6 @@ class CDP:
                         except ValueError:
                             continue
                         else:
-                            # TODO: На внутренних точках должно быть строго > 0,
-                            # здесь надо проверить, что точка не находится на грани base
                             if s < 0:
                                 raise ValueError(
                                     f'Not a valid CDP - sum of psi is {s} on {vert}')
@@ -41,7 +39,6 @@ class CDP:
         self.base = base
         self.n = len(self.base.vertices()[0].vector())
         self.k = len(self.base.vertices())
-        # TODO: is there a better solution for vertices traversal?
         self.base_adjacency_map = defaultdict(set)
 
     def __str__(self):
@@ -78,7 +75,6 @@ class CDP:
         except ZeroDivisionError:
             raise ValueError(f'phi is not invertible')
         inv = np.array([np.array(row) for row in inv])
-        # print("invert ", inv)
         for i in range(len(self.psi_list)):
             self.psi_list[i].transform(phi, inv)
 
@@ -105,10 +101,6 @@ class CDP:
             for piece in psi.affine_pieces:
                 for j, coef in enumerate(v):
                     piece.coefs[j + 1] += coef * beta_list[idx]
-
-    def is_fano(self):
-        # TODO: move gravity center to zero - nearest integer (or any internal integer point, if none - blow up twice)
-        pass
 
     def _vert_permutation_is_valid(self, perm):
         """Check that vertices permutation saves incidence
