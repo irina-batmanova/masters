@@ -19,7 +19,8 @@ class AffineFunction:
 
     def value(self, x: List[int]):
         if x not in self.domain:
-            raise ValueError(f'{x} is not in function domain {self.domain.vertices()}')
+            raise ValueError(
+                f'{x} is not in function domain {self.domain.vertices()}')
         if len(x) != self.dim:
             raise ValueError(f'Wrong dimension of x: {len(x)}')
         return sum([a * b for a, b in zip(self.coefs[1:], x)]) + self.coefs[0]
@@ -86,9 +87,11 @@ class PiecewiseAffineFunction:
 
     def can_be_translated(self, other_psi):
         domains_mapping = self._domains_mapping(other_psi)
-        alpha = other_psi.affine_pieces[domains_mapping[0]].coefs[0] - self.affine_pieces[0].coefs[0]
+        alpha = other_psi.affine_pieces[domains_mapping[0]
+                                        ].coefs[0] - self.affine_pieces[0].coefs[0]
         for i in range(1, len(domains_mapping)):
-            a = other_psi.affine_pieces[domains_mapping[i]].coefs[0] - self.affine_pieces[i].coefs[0]
+            a = other_psi.affine_pieces[domains_mapping[i]
+                                        ].coefs[0] - self.affine_pieces[i].coefs[0]
             if a != alpha:
                 return False, 0
         return True, alpha
@@ -96,11 +99,13 @@ class PiecewiseAffineFunction:
     def cat_be_sheared(self, other_psi):
         domains_mapping = self._domains_mapping(other_psi)
         n = len(other_psi.affine_pieces[domains_mapping[0]].coefs)
-        v = [other_psi.affine_pieces[domains_mapping[0]].coefs[i] - self.affine_pieces[0].coefs[i]
+        v = [other_psi.affine_pieces[domains_mapping[0]].coefs[i] -
+             self.affine_pieces[0].coefs[i]
              for i in range(1, n)]
         for j in range(1, len(domains_mapping)):
-            other_v = [other_psi.affine_pieces[domains_mapping[j]].coefs[i] - self.affine_pieces[j].coefs[i]
-                for i in range(1, n)]
+            other_v = [other_psi.affine_pieces[domains_mapping[j]].coefs[i] -
+                       self.affine_pieces[j].coefs[i]
+                       for i in range(1, n)]
             if other_v != v:
                 return False
         return True
@@ -108,4 +113,3 @@ class PiecewiseAffineFunction:
     def __str__(self):
         resp = '\n'.join([str(piece) for piece in self.affine_pieces])
         return 'Piecewise affine function:\n' + resp
-

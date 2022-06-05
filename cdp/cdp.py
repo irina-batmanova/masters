@@ -1,16 +1,15 @@
 #!/usr/bin/env sage
 from sage.all import *
 from typing import List
-from piecewise_affine_function import PiecewiseAffineFunction, AffineFunction
+from piecewise_affine_function import PiecewiseAffineFunction
 from collections import defaultdict
 from itertools import permutations
 import numpy as np
-from sympy.matrices import Matrix
-from sympy import Rational, lcm
 
 
 class CDP:
-    def __init__(self, psi_list: List[PiecewiseAffineFunction], base: Polyhedron):
+    def __init__(
+            self, psi_list: List[PiecewiseAffineFunction], base: Polyhedron):
         # Check that sum of psi is non negative on borders of domains
         # (check polytop vertices of domains laying inside of function scope)
         for psi in psi_list:
@@ -18,7 +17,8 @@ class CDP:
                 for vert in piece.domain.vertices():
                     if vert in base:
                         try:
-                            s = sum([ps.value(vert.vector()) for ps in psi_list])
+                            s = sum([ps.value(vert.vector())
+                                    for ps in psi_list])
                         except ValueError:
                             continue
                         else:
@@ -42,8 +42,8 @@ class CDP:
         self.base_adjacency_map = defaultdict(set)
 
     def __str__(self):
-        psi_str = "\n".join([str(psi) for psi in self.psi_list])
-        return f'CDP object, psi list: {psi_str},\nbase: {self.base.vertices()}'
+        psi_str = "\n\n".join([str(psi) for psi in self.psi_list])
+        return f'CDP object, psi list:\n{psi_str},\n\nbase: {self.base.vertices()}\n'
 
     def __eq__(self, other):
         """
@@ -61,7 +61,8 @@ class CDP:
     def _build_adjacency_map(self):
         for i in range(self.k):
             for j in range(i + 1, self.k):
-                if self.base.vertices()[i].is_incident(self.base.vertices()[j]):
+                if self.base.vertices()[i].is_incident(
+                        self.base.vertices()[j]):
                     self.base_adjacency_map[i].add(j)
                     self.base_adjacency_map[j].add(i)
 
@@ -122,10 +123,12 @@ class CDP:
         A = np.matmul(np.matmul(point_images, points), inverse)
         return A
 
-    def _domains_match(self, psi1: PiecewiseAffineFunction, psi2: PiecewiseAffineFunction) -> bool:
+    def _domains_match(self, psi1: PiecewiseAffineFunction,
+                       psi2: PiecewiseAffineFunction) -> bool:
         if len(psi1.affine_pieces) != len(psi2.affine_pieces):
             return False
-        return set([p.domain for p in psi1.affine_pieces]) == set([p.domain for p in psi2.affine_pieces])
+        return set([p.domain for p in psi1.affine_pieces]) == set(
+            [p.domain for p in psi2.affine_pieces])
 
     def _get_equivalence_classes(self, other_psi_list):
         used = [False for _ in range(len(other_psi_list))]
@@ -135,7 +138,8 @@ class CDP:
                 if self._domains_match(psi1, psi2):
                     used[j] = True
                     classes[i].append(j)
-        if len([c for c in classes if len(c) == 0]) > 0 or len([u for u in used if not u]) > 0:
+        if len([c for c in classes if len(c) == 0]) > 0 or len(
+                [u for u in used if not u]) > 0:
             return False, []
         return True, classes
 
@@ -191,12 +195,14 @@ class CDP:
             return False
         if len(self.psi_list) != len(other_cdp.psi_list):
             return False
-        G = np.array([np.array(vert.vector()) for vert in other_cdp.base.vertices()])
+        G = np.array([np.array(vert.vector())
+                     for vert in other_cdp.base.vertices()])
         G = G.T
         for perm in permutations([i for i in range(self.k)]):
             if not self._vert_permutation_is_valid(perm):
                 continue
-            V = np.array([np.array(self.base.vertices()[i].vector()) for i in perm])
+            V = np.array([np.array(self.base.vertices()[i].vector())
+                         for i in perm])
             # A transforms base of one CDP to the base of another
             A = self._get_transform_matrix(V, G)
             A = linear_transformation(matrix(QQ, A))
@@ -205,77 +211,20 @@ class CDP:
                 cdp_after_base_transform.transform_base(A)
             except ValueError:
                 continue
-            splits, classes = cdp_after_base_transform._get_equivalence_classes(other_cdp.psi_list)
+            splits, classes = cdp_after_base_transform._get_equivalence_classes(
+                other_cdp.psi_list)
             if not splits:
                 continue
             mappings = cdp_after_base_transform._list_mappings(classes)
             for m in mappings:
-                can = cdp_after_base_transform._can_be_translated(m, other_cdp.psi_list)
+                can = cdp_after_base_transform._can_be_translated(
+                    m, other_cdp.psi_list)
                 if not can:
                     continue
-                can = cdp_after_base_transform._can_be_sheared(m, other_cdp.psi_list)
+                can = cdp_after_base_transform._can_be_sheared(
+                    m, other_cdp.psi_list)
                 if not can:
                     continue
                 return True
         return False
-
-
-def facet_is_at_height_one(vertices):
-    verts = vertices[:len(vertices[0])]
-    verts = np.array([np.array(v) for v in verts])
-    u = np.ravel(np.matmul(np.linalg.inv(verts), np.ones((len(verts), 1))))
-    for x in u:
-        if not x.is_integer():
-            return False
-    return True
-
-
-def generate_cdp_from_polytope(poly: Polyhedron):
-    # Walk over all facets, if facet's normal projection to x_n is positive -
-    # this facet if a part of psi_1 graph, otherwise - part of -psi_2 grapg
-
-    def plane_from_points(points):
-        # (p_11, ..., p_1n), ..., (p_n1, ..., p_nn)
-        # p_11, p_21, ..., p_n1
-        #         ...             = P
-        # p_1n, p_2n, ..., p_nn
-        # AP = b, b = (1, ..., 1) => A = bP^-1
-        # 1 - a_1*x_1 - ... - a_n*x_n = 0, return [1, -a1, ..., -a_n]
-        points = points[:len(points[0])]
-        b = Matrix([[1 for i in range(len(points[0]))]])
-        P = Matrix(points).T
-        A = b * P.inv()
-        return [Rational(1)] + [-a for a in list(A.row(0))]
-
-    def integer_coefs_from_rational(coefs):
-        qs = [c.q for c in coefs]
-        l = lcm(qs)
-        coefs = [c * l for c in coefs]
-        return [c / coefs[-1] for c in coefs]
-
-    def piecewise_from_facets(facets, invert_coefs=False):
-        pieces = []
-        for facet in facets:
-            # Find a plane equation with rational coefficients from facet's vertices
-            # and multiply by least common multiple of denominators to obtain integer
-            # coefficients.
-            r = integer_coefs_from_rational(plane_from_points([p.vector() for p in facet]))
-            if invert_coefs:
-                r = [-c for c in r]
-            pieces.append(AffineFunction(coefficients=r[:-1], domain=Polyhedron(
-                vertices=[p.vector()[:-1] for p in facet])))
-        return PiecewiseAffineFunction(affine_pieces=pieces)
-
-    psi1_facets = []
-    psi2_facets = []
-    for facet in poly.facets():
-        # Find out whether a facet belongs to psi1 or psi2
-        coef = facet.normal_cone(direction='outer').rays_list()[0][-1]
-        if coef > 0:
-            psi1_facets.append(facet.vertices())
-        elif coef < 0:
-            psi2_facets.append(facet.vertices())
-    psi1 = piecewise_from_facets(psi1_facets, invert_coefs=True)
-    psi2 = piecewise_from_facets(psi2_facets)
-    return CDP(psi_list=[psi1, psi2], base=Polyhedron(vertices=[v.vector()[:-1] for v in poly.vertices()]))
 
